@@ -1,7 +1,6 @@
+version: '3.8'
 services:
   frontend:
-    build: .
-    container_name: green-api-frontend
-    ports:
-      - "3000:80"
-    restart: unless-stopped
+    build:
+      context: .
+    image: ${DOCKER_HUB_USER}/green-api-frontend:latest
