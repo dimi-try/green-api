@@ -1,0 +1,6 @@
+version: '3.8'
+services:
+  frontend:
+    build:
+      context: .
+    image: ${DOCKER_HUB_USER}/green-api-frontend:latest
