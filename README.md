@@ -81,11 +81,11 @@ GREEN-API → { idMessage }
 
 ## Новый чат (CheckAccount)
 
-Кнопка «Новый чат» в сайдбаре открывает диалог: можно указать Telegram **username** (`@vasya`) либо **номер телефона**.
+Кнопка «Новый чат» в сайдбаре открывает диалог: указываете Telegram **username** (`@vasya`). Имя без `@` не отправляется — выводится ошибка «Имя пользователя должно начинаться с @».
 
 ```
 React
-  │  POST checkAccount { username } | { phoneNumber }
+  │  POST checkAccount { username: "@vasya" }
   ▼
 GREEN-API
   │

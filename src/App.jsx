@@ -259,18 +259,18 @@ export default function App() {
     }
   };
 
-  const handleCreateChat = async ({ username, phoneNumber }) => {
+  const handleCreateChat = async ({ username }) => {
     setDialogPending(true);
     setDialogError(null);
     try {
-      const data = await checkAccount(credentials, { username, phoneNumber });
+      const data = await checkAccount(credentials, username);
       const chatId = extractChatId(data);
       if (!chatId) {
         setDialogError("CheckAccount не вернул chatId");
         return;
       }
 
-      const name = username ? username.replace(/^@+/, "") : phoneNumber;
+      const name = username.replace(/^@+/, "");
 
       const existing = customChats.find((c) => c.chatId === chatId);
       if (existing) {

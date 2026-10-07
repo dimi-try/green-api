@@ -2,19 +2,19 @@ import { useState } from "react";
 
 export default function NewChatDialog({ pending, error, onClose, onCreate }) {
   const [username, setUsername] = useState("");
-  const [phone, setPhone] = useState("");
+  const [formError, setFormError] = useState(null);
 
-  const canSubmit = Boolean(username.trim() || phone.trim());
+  const name = username.trim();
+  const canSubmit = name.length > 0;
 
   const submit = (e) => {
     e.preventDefault();
-    const name = username.trim();
-    const number = phone.trim();
-    if (!name && !number) return;
-    onCreate({
-      username: name || null,
-      phoneNumber: number || null
-    });
+    if (!canSubmit) return;
+    if (!name.startsWith("@")) {
+      setFormError('Имя пользователя должно начинаться с "@"');
+      return;
+    }
+    onCreate({ username: name });
   };
 
   return (
@@ -33,26 +33,18 @@ export default function NewChatDialog({ pending, error, onClose, onCreate }) {
             type="text"
             placeholder="@vasya"
             value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            onChange={(e) => {
+              setUsername(e.target.value);
+              setFormError(null);
+            }}
             autoComplete="off"
             disabled={pending}
           />
         </label>
 
-        <label className="login-label">
-          или номер телефона
-          <input
-            className="login-input"
-            type="tel"
-            placeholder="79001234567"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            autoComplete="off"
-            disabled={pending}
-          />
-        </label>
-
-        {error && <div className="login-error">{error}</div>}
+        {(error || formError) && (
+          <div className="login-error">{error ?? formError}</div>
+        )}
 
         <div className="dialog-actions">
           <button

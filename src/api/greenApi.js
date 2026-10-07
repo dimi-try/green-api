@@ -25,14 +25,13 @@ export function getStateInstance(credentials) {
 }
 
 // POST /waInstance{idInstance}/checkAccount/{apiTokenInstance}
-// Проверяет Telegram-аккаунт по username или phoneNumber,
+// Проверяет Telegram-аккаунт по username (@vasya),
 // возвращает данные аккаунта (содержат chatId)
-export function checkAccount(credentials, { username, phoneNumber }) {
-  const body = username ? { username } : { phoneNumber };
+export function checkAccount(credentials, username) {
   return request(credentials, "checkAccount", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body)
+    body: JSON.stringify({ username })
   });
 }
 
