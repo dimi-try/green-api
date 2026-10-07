@@ -6,6 +6,7 @@ export default function ChatList({
   query,
   onQueryChange,
   onSelect,
+  onNewChat,
   onLogout
 }) {
   return (
@@ -13,15 +14,22 @@ export default function ChatList({
       <div className="sidebar-header">
         <div className="sidebar-title-row">
           <h1 className="sidebar-title">Чаты</h1>
-          {onLogout && (
-            <button
-              className="logout-btn"
-              onClick={onLogout}
-              title="Отключиться от Green API"
-            >
-              Выйти
-            </button>
-          )}
+          <div className="sidebar-actions">
+            {onNewChat && (
+              <button className="new-chat-btn" onClick={onNewChat}>
+                Новый чат
+              </button>
+            )}
+            {onLogout && (
+              <button
+                className="logout-btn"
+                onClick={onLogout}
+                title="Отключиться от Green API"
+              >
+                Выйти
+              </button>
+            )}
+          </div>
         </div>
         <input
           className="search-box"

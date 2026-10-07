@@ -61,6 +61,26 @@ body {
   gap: 8px;
 }
 
+.sidebar-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.new-chat-btn {
+  background: #2f6ea5;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.new-chat-btn:hover {
+  background: #3a7fb5;
+}
+
 .logout-btn {
   background: none;
   border: 1px solid #2b3a4a;
@@ -300,6 +320,92 @@ body {
 
 .login-submit:not(:disabled):hover {
   background: #3a7fb5;
+}
+
+/* ---------- Dialogs (new chat) ---------- */
+
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 50;
+}
+
+.dialog-card {
+  width: 100%;
+  max-width: 360px;
+  background: #17212b;
+  border: 1px solid #0b131b;
+  border-radius: 16px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
+
+.dialog-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.dialog-cancel {
+  flex: 1;
+  background: none;
+  border: 1px solid #2b3a4a;
+  color: #9fb0c0;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dialog-cancel:hover {
+  color: #e7e9ea;
+  border-color: #3a4a5c;
+}
+
+.dialog-actions .login-submit {
+  flex: 2;
+  margin-top: 0;
+}
+
+/* ---------- Send error ---------- */
+
+.send-error-banner {
+  margin: 8px 14px 0;
+  background: rgba(224, 86, 86, 0.12);
+  border: 1px solid rgba(224, 86, 86, 0.35);
+  color: #f0a0a0;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.send-error-banner button {
+  background: none;
+  border: none;
+  color: #f0a0a0;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
 }
 
 /* ---------- Chat view ---------- */

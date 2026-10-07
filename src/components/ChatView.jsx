@@ -1,7 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import Avatar from "./Avatar";
 
-export default function ChatView({ chat, onSend, onBack }) {
+export default function ChatView({
+  chat,
+  onSend,
+  onBack,
+  sending,
+  sendError,
+  onDismissSendError
+}) {
   const [text, setText] = useState("");
   const bottomRef = useRef(null);
 
@@ -32,6 +39,19 @@ export default function ChatView({ chat, onSend, onBack }) {
         </div>
       </header>
 
+      {sendError && (
+        <div className="send-error-banner">
+          <span>{sendError}</span>
+          <button
+            type="button"
+            onClick={onDismissSendError}
+            aria-label="Скрыть"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       <div className="messages">
         {chat.messages.map((msg) => (
           <div key={msg.id} className={`message ${msg.author === "me" ? "out" : "in"}`}>
@@ -55,9 +75,14 @@ export default function ChatView({ chat, onSend, onBack }) {
           value={text}
           onChange={(e) => setText(e.target.value)}
           autoFocus
+          disabled={sending}
         />
-        <button className="send-btn" type="submit" disabled={!text.trim()}>
-          Отправить
+        <button
+          className="send-btn"
+          type="submit"
+          disabled={!text.trim() || sending}
+        >
+          {sending ? "Отправка..." : "Отправить"}
         </button>
       </form>
     </section>

@@ -1,6 +1,5 @@
 import { useState } from "react";
-
-const GREEN_API_BASE = "https://api.green-api.com";
+import { getStateInstance } from "../api/greenApi";
 
 export default function Login({ onSuccess }) {
   const [idInstance, setIdInstance] = useState("");
@@ -22,18 +21,12 @@ export default function Login({ onSuccess }) {
     setError(null);
 
     try {
-      const res = await fetch(
-        `${GREEN_API_BASE}/waInstance${id}/getStateInstance/${token}`
-      );
+      const data = await getStateInstance({
+        idInstance: id,
+        apiToken: token
+      });
 
-      if (res.status === 401) {
-        setError("Неверный ID Instance или API Token");
-        return;
-      }
-
-      const data = await res.json().catch(() => null);
-
-      if (res.ok && data?.stateInstance === "authorized") {
+      if (data?.stateInstance === "authorized") {
         onSuccess({ idInstance: id, apiToken: token });
       } else if (data?.stateInstance) {
         setError(
@@ -43,7 +36,13 @@ export default function Login({ onSuccess }) {
         setError("Не удалось подключиться к Green API");
       }
     } catch (err) {
-      setError("Сеть недоступна или API не отвечает");
+      setError(
+        err.message === "HTTP 401"
+          ? "Неверный ID Instance или API Token"
+          : err instanceof TypeError
+            ? "Сеть недоступна или API не отвечает"
+            : err.message || "Не удалось подключиться к Green API"
+      );
     } finally {
       setPending(false);
     }
