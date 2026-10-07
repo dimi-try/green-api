@@ -100,6 +100,69 @@ chatId сохраняется, чат добавляется в список
 
 Примечание: точный адрес метода `checkAccount` и поле с `chatId` в его ответе могут отличаться — при необходимости подправьте `src/api/greenApi.js` и `extractChatId()` в `src/App.jsx`.
 
+## Получение сообщений (long polling)
+
+Входящие сообщения приходят через два последовательных метода: `ReceiveNotification` → `DeleteNotification`.
+
+```
+React
+  │  GET receiveNotification?receiveTimeout=25   (long polling: ждём до 25 с)
+  ▼
+GREEN-API
+  │
+  ▼
+{
+  "receiptId": 1234567,
+  "body": {
+    "typeWebhook": "incomingMessageReceived",
+    "instanceData": { "idInstance": 4100000000, "typeInstance": "telegram" },
+    "timestamp": 1763115112,
+    "idMessage": "1763115112345",
+    "senderData": {
+      "chatId": "10000000",
+      "chatType": "user",
+      "sender": "10000000",
+      "chatName": "Василиса",
+      "senderName": "Василиса"
+    },
+    "messageData": {
+      "typeMessage": "textMessage",
+      "textMessageData": { "textMessage": "Привет, как дела?" }
+    }
+  }
+}
+  │
+  ▼
+DELETE deleteNotification/{receiptId}   ← обязательно, иначе событие вернётся снова
+```
+
+Ответ — это фактическая структура события GREEN-API. Приложение проверяет:
+
+```js
+if (
+  notification.body.typeWebhook === "incomingMessageReceived" &&
+  notification.body.messageData.typeMessage === "textMessage"
+) {
+  const text = notification.body.messageData.textMessageData.textMessage;
+}
+```
+
+Далее:
+
+- сообщение добавляется в чат по `senderData.chatId` (сообщение получает `id = body.idMessage`, время — из `timestamp`);
+- если чата ещё нет — он создаётся автоматически (`senderData.chatName` / `senderName`);
+- если чат не открыт — растёт счётчик непрочитанных (бейдж в списке);
+- после обработки обязательно вызывается `DELETE /waInstance{idInstance}/deleteNotification/{apiTokenInstance}/{receiptId}`;
+- при ошибке сети polling повторяется через 2 секунды; при повторном получении того же события дедупликация по `idMessage` отбросит дубль.
+
+Примечание про 408/504: при пустой очереди long polling может завершаться статусами `408` (ожидание истекло) или `504` (таймаут шлюза). Оба трактуются как «событий нет» (см. `RECEIVE_TIMEOUT` в `src/api/greenApi.js`), polling продолжается без пауз.
+
+Важно: в личном кабинете у инстанса должен быть очищен URL webhook'а, иначе `ReceiveNotification` вернёт `400` «Message cannot be received because custom webhook url is set...». Такая ошибка показывается красным баннером над списком чатов. Для отладки в консоли браузера пишется сырой статус и тело каждого ответа (`[green-api] receiveNotification ...`).
+
+`null` от `receiveNotification` — это нормально: очередь уведомлений пуста, никто не писал инстансу.
+
+Long polling запускается сразу после авторизации и останавливается при выходе («Выйти»).
+
 ## Структура
 
 ```

@@ -1,9 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ChatList from "./components/ChatList";
 import ChatView from "./components/ChatView";
 import Login from "./components/Login";
 import NewChatDialog from "./components/NewChatDialog";
-import { checkAccount, sendMessage } from "./api/greenApi";
+import {
+  checkAccount,
+  deleteNotification,
+  receiveNotification,
+  sendMessage
+} from "./api/greenApi";
 import "./App.css";
 
 const STORAGE_KEY = "greenApiCredentials";
@@ -44,6 +49,14 @@ function extractChatId(data) {
   return raw === null || raw === undefined ? null : String(raw);
 }
 
+function formatTimestamp(ts) {
+  const date = ts ? new Date(Number(ts) * 1000) : new Date();
+  return date.toLocaleTimeString("ru-RU", {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
 export default function App() {
   const [credentials, setCredentials] = useState(loadCredentials);
   const [dataChats, setDataChats] = useState([]);
@@ -59,6 +72,14 @@ export default function App() {
   const [showNewChat, setShowNewChat] = useState(false);
   const [dialogPending, setDialogPending] = useState(false);
   const [dialogError, setDialogError] = useState(null);
+  const [pollError, setPollError] = useState(null);
+
+  // Актуальный выбранный чат для long polling (чтобы не сбрасывать
+  // polling-петлю при смене активного чата)
+  const activeIdRef = useRef(activeId);
+  useEffect(() => {
+    activeIdRef.current = activeId;
+  }, [activeId]);
 
   useEffect(() => {
     fetch("/data.json")
@@ -85,6 +106,111 @@ export default function App() {
       JSON.stringify(customChats)
     );
   }, [customChats, credentials]);
+
+  // Приём входящих сообщений: long polling
+  // ReceiveNotification → обработка → DeleteNotification
+  useEffect(() => {
+    if (!credentials) return;
+
+    let active = true;
+    const controller = new AbortController();
+
+    const handleNotification = (notification) => {
+      const body = notification?.body;
+      const messageData = body?.messageData;
+      if (
+        body?.typeWebhook !== "incomingMessageReceived" ||
+        messageData?.typeMessage !== "textMessage"
+      ) {
+        return;
+      }
+      const text = messageData?.textMessageData?.textMessage;
+      const { chatId, chatType, chatName, senderName } =
+        body?.senderData ?? {};
+      if (!text || !chatId) return;
+
+      const msg = {
+        id: String(body.idMessage ?? `incoming-${Date.now()}`),
+        author: "them",
+        text,
+        time: formatTimestamp(body?.timestamp),
+        ...(senderName ? { authorName: senderName } : {})
+      };
+
+      setCustomChats((prev) => {
+        const chat = prev.find((c) => c.chatId === String(chatId));
+        if (!chat) {
+          // Пишут нам впервые — создаём чат автоматически
+          return [
+            ...prev,
+            {
+              id: `tg-${chatId}`,
+              name: chatName || senderName || String(chatId),
+              chatId: String(chatId),
+              isGroup: chatType === "group",
+              online: false,
+              unread: 1,
+              messages: [msg]
+            }
+          ];
+        }
+        // Дедупликация: событие могло прийти повторно
+        if (chat.messages.some((m) => m.id === msg.id)) return prev;
+        return prev.map((c) =>
+          c.id === chat.id
+            ? {
+                ...c,
+                unread: c.id === activeIdRef.current ? 0 : c.unread + 1,
+                messages: [...c.messages, msg]
+              }
+            : c
+        );
+      });
+    };
+
+    const poll = async () => {
+      while (active) {
+        try {
+          const notification = await receiveNotification(
+            credentials,
+            undefined,
+            controller.signal
+          );
+          if (!active) return;
+          setPollError(null);
+          if (!notification) continue;
+
+          handleNotification(notification);
+
+          // Обязательно удаляем событие из очереди,
+          // иначе следующий опрос вернёт его снова
+          try {
+            await deleteNotification(
+              credentials,
+              notification.receiptId,
+              controller.signal
+            );
+          } catch {
+            // Не критично: дедупликация по idMessage защитит от дубля
+          }
+        } catch (err) {
+          if (!active) return;
+          // Например: задан webhook URL в кабинете —
+          // ReceiveNotification вернёт 400, показываем причину
+          setPollError(err.message || "Ошибка получения уведомлений");
+          // Сеть/API недоступны — пауза и повтор
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+        }
+      }
+    };
+
+    poll();
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [credentials]);
 
   const chats = useMemo(
     () => [...dataChats, ...customChats],
@@ -254,6 +380,7 @@ export default function App() {
           setDialogError(null);
         }}
         onLogout={handleLogout}
+        pollError={pollError}
       />
 
       {showNewChat && (

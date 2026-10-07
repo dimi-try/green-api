@@ -115,6 +115,18 @@ body {
   color: #7f91a4;
 }
 
+.poll-error {
+  margin: 0 12px 8px;
+  background: rgba(224, 86, 86, 0.12);
+  border: 1px solid rgba(224, 86, 86, 0.35);
+  color: #f0a0a0;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
 .chat-list {
   flex: 1;
   overflow-y: auto;

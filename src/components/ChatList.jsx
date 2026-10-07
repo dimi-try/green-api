@@ -7,7 +7,8 @@ export default function ChatList({
   onQueryChange,
   onSelect,
   onNewChat,
-  onLogout
+  onLogout,
+  pollError
 }) {
   return (
     <aside className="sidebar">
@@ -39,6 +40,8 @@ export default function ChatList({
           onChange={(e) => onQueryChange(e.target.value)}
         />
       </div>
+
+      {pollError && <div className="poll-error">{pollError}</div>}
 
       <div className="chat-list">
         {chats.length === 0 && <div className="chat-list-empty">Ничего не найдено</div>}
