@@ -1,6 +1,7 @@
 # green-api
 
 Интерфейс мессенджера (по типу Telegram) на React + Green API. Бекенда нет: чаты, история и учётные данные хранятся в `localStorage` браузера.
+<img width="1064" height="860" alt="image" src="https://github.com/user-attachments/assets/7c3b133b-65e6-4972-9ac2-55cd7d81ddcd" />
 
 ## Стек
 
