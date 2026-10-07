@@ -59,14 +59,13 @@ function formatTimestamp(ts) {
 
 export default function App() {
   const [credentials, setCredentials] = useState(loadCredentials);
-  const [dataChats, setDataChats] = useState([]);
   const [customChats, setCustomChats] = useState(() =>
     credentials ? loadCustomChats(credentials.idInstance) : []
   );
-  const [activeId, setActiveId] = useState(null);
+  const [activeId, setActiveId] = useState(
+    credentials ? loadCustomChats(credentials.idInstance)[0]?.id ?? null : null
+  );
   const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState(null);
   const [showNewChat, setShowNewChat] = useState(false);
@@ -80,23 +79,6 @@ export default function App() {
   useEffect(() => {
     activeIdRef.current = activeId;
   }, [activeId]);
-
-  useEffect(() => {
-    fetch("/data.json")
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
-        setDataChats(data.chats ?? []);
-        setActiveId(data.chats?.[0]?.id ?? null);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err.message);
-        setLoading(false);
-      });
-  }, []);
 
   // Сохраняем созданные чаты (chatId + локальная история) per instance
   useEffect(() => {
@@ -212,58 +194,34 @@ export default function App() {
     };
   }, [credentials]);
 
-  const chats = useMemo(
-    () => [...dataChats, ...customChats],
-    [dataChats, customChats]
-  );
-
   const activeChat = useMemo(
-    () => chats.find((c) => c.id === activeId) ?? null,
-    [chats, activeId]
+    () => customChats.find((c) => c.id === activeId) ?? null,
+    [customChats, activeId]
   );
 
   const filteredChats = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return chats;
-    return chats.filter((chat) => {
+    if (!q) return customChats;
+    return customChats.filter((chat) => {
       const last = chat.messages[chat.messages.length - 1];
       return (
         chat.name.toLowerCase().includes(q) ||
         (last?.text?.toLowerCase().includes(q) ?? false)
       );
     });
-  }, [chats, query]);
+  }, [customChats, query]);
 
   const selectChat = (id) => {
     setActiveId(id);
-    setDataChats((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, unread: 0 } : c))
-    );
     setCustomChats((prev) =>
       prev.map((c) => (c.id === id ? { ...c, unread: 0 } : c))
     );
   };
 
   const sendMessageToChat = async (text) => {
-    const chat = chats.find((c) => c.id === activeId);
+    const chat = customChats.find((c) => c.id === activeId);
     if (!chat) return;
-    const time = new Date().toLocaleTimeString("ru-RU", {
-      hour: "2-digit",
-      minute: "2-digit"
-    });
-
-    // Тестовые чаты из data.json не имеют chatId — сообщение живёт только в сессии
-    if (!chat.chatId || !credentials) {
-      setDataChats((prev) =>
-        appendToChat(prev, chat.id, {
-          id: `local-${Date.now()}`,
-          author: "me",
-          text,
-          time
-        })
-      );
-      return;
-    }
+    const time = formatTimestamp();
 
     const tempId = `temp-${Date.now()}`;
     setCustomChats((prev) =>
@@ -341,7 +299,9 @@ export default function App() {
   const handleLogin = (creds) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(creds));
     setCredentials(creds);
-    setCustomChats(loadCustomChats(creds.idInstance));
+    const saved = loadCustomChats(creds.idInstance);
+    setCustomChats(saved);
+    setActiveId(saved[0]?.id ?? null);
   };
 
   const handleLogout = () => {
@@ -353,18 +313,6 @@ export default function App() {
 
   if (!credentials) {
     return <Login onSuccess={handleLogin} />;
-  }
-
-  if (loading) {
-    return <div className="boot">Загрузка чатов...</div>;
-  }
-
-  if (error) {
-    return (
-      <div className="boot">
-        Не удалось загрузить /data.json: {error}
-      </div>
-    );
   }
 
   return (
@@ -403,7 +351,9 @@ export default function App() {
         />
       ) : (
         <section className="main">
-          <div className="empty-state">Выберите чат, чтобы начать переписку</div>
+          <div className="empty-state">
+            Нажмите «Новый чат», чтобы начать переписку
+          </div>
         </section>
       )}
     </div>

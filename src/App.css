@@ -16,15 +16,6 @@ body {
   color: #e7e9ea;
 }
 
-.boot {
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #7f91a4;
-  font-size: 18px;
-}
-
 /* ---------- Layout ---------- */
 
 .app {

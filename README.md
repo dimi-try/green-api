@@ -1,6 +1,6 @@
 # green-api
 
-Базовый интерфейс мессенджера (по типу Telegram) на React. Бекенда нет — тестовые данные берутся из статического файла `public/data.json`.
+Интерфейс мессенджера (по типу Telegram) на React + Green API. Бекенда нет: чаты, история и учётные данные хранятся в `localStorage` браузера.
 
 ## Стек
 
@@ -106,7 +106,7 @@ chatId сохраняется, чат добавляется в список
 
 ```
 React
-  │  GET receiveNotification?receiveTimeout=25   (long polling: ждём до 25 с)
+  │  GET receiveNotification?receiveTimeout=5   (long polling: ждём до 5 с)
   ▼
 GREEN-API
   │
@@ -166,12 +166,11 @@ Long polling запускается сразу после авторизации
 ## Структура
 
 ```
-├── public/data.json     # тестовые данные: чаты + сообщения
 ├── src/
-│   ├── App.jsx          # состояние: авторизация, чаты, отправка, новый чат
+│   ├── App.jsx          # состояние: авторизация, чаты, отправка, новый чат, long polling
 │   ├── App.css          # стили (dark-тема, страница входа, диалоги)
 │   ├── api/
-│   │   └── greenApi.js  # клиент Green API (getStateInstance, checkAccount, sendMessage)
+│   │   └── greenApi.js  # клиент Green API (getStateInstance, checkAccount, sendMessage, receiveNotification, deleteNotification)
 │   └── components/
 │       ├── Avatar.jsx      # аватар с инициалами (цвет от имени)
 │       ├── ChatList.jsx    # левая панель: список чатов + «Новый чат»/«Выйти»
@@ -181,30 +180,27 @@ Long polling запускается сразу после авторизации
 └── Dockerfile           # multi-stage: node (build) → nginx (serve)
 ```
 
-## Правка тестовых данных
+## Формат чата в localStorage
 
-Открой `public/data.json`. Формат:
+Ключ `greenApiChats:{idInstance}`:
 
 ```json
-{
-  "chats": [
-    {
-      "id": "c1",
-      "name": "Имя чата",
-      "isGroup": false,
-      "online": true,
-      "unread": 2,
-      "messages": [
-        { "id": "m1", "author": "them", "text": "Входящее сообщение", "time": "09:12" },
-        { "id": "m2", "author": "me", "text": "Исходящее сообщение", "time": "09:15" }
-      ]
-    }
-  ]
-}
+[
+  {
+    "id": "tg-10000000",
+    "name": "Василиса",
+    "chatId": "10000000",
+    "isGroup": false,
+    "online": false,
+    "unread": 0,
+    "messages": [
+      { "id": "126543123451133331119", "author": "them", "text": "Привет!", "time": "09:12" }
+    ]
+  }
+]
 ```
 
+- `chatId` — числовой Telegram chat ID из Green API (для групп может быть отрицательным)
 - `author`: `"me"` — исходящее, `"them"` — входящее
-- для групповых чатов (`isGroup: true`) у входящих можно указать `authorName`
 - `unread` — счётчик непрочитанных (сбрасывается при открытии чата)
-
-Отправка сообщений в тестовых чатах из `data.json` работает только в рамках текущей сессии (в state), обновления `data.json` при отправке не происходит.
+- учётные данные (ID Instance + API Token) — ключ `greenApiCredentials`
