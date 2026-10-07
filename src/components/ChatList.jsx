@@ -1,10 +1,28 @@
 import Avatar from "./Avatar";
 
-export default function ChatList({ chats, activeId, query, onQueryChange, onSelect }) {
+export default function ChatList({
+  chats,
+  activeId,
+  query,
+  onQueryChange,
+  onSelect,
+  onLogout
+}) {
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
-        <h1 className="sidebar-title">Чаты</h1>
+        <div className="sidebar-title-row">
+          <h1 className="sidebar-title">Чаты</h1>
+          {onLogout && (
+            <button
+              className="logout-btn"
+              onClick={onLogout}
+              title="Отключиться от Green API"
+            >
+              Выйти
+            </button>
+          )}
+        </div>
         <input
           className="search-box"
           type="text"

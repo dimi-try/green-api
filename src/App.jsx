@@ -1,9 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
 import ChatList from "./components/ChatList";
 import ChatView from "./components/ChatView";
+import Login from "./components/Login";
 import "./App.css";
 
+const STORAGE_KEY = "greenApiCredentials";
+
+function loadCredentials() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const creds = JSON.parse(raw);
+    if (creds && creds.idInstance && creds.apiToken) return creds;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export default function App() {
+  const [credentials, setCredentials] = useState(loadCredentials);
   const [chats, setChats] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [query, setQuery] = useState("");
@@ -71,6 +87,20 @@ export default function App() {
     );
   };
 
+  const handleLogin = (creds) => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(creds));
+    setCredentials(creds);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setCredentials(null);
+  };
+
+  if (!credentials) {
+    return <Login onSuccess={handleLogin} />;
+  }
+
   if (loading) {
     return <div className="boot">Загрузка чатов...</div>;
   }
@@ -91,6 +121,7 @@ export default function App() {
         query={query}
         onQueryChange={setQuery}
         onSelect={selectChat}
+        onLogout={handleLogout}
       />
       {activeChat ? (
         <ChatView
